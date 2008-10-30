@@ -1,9 +1,27 @@
 #!/usr/bin/ruby
 
+require 'rubygems'
+require 'tellme'
 require 'optparse'
 
 options = {}
 
 OptionParser.new do |opts|
-	opts.banner
+	opts.banner = "Usage: tellme --gui gtk"
 
+  opts.on("-ui", "--ui", "Select the user interface (GTK, Text)") do |ui|
+    options[:ui] = ui
+  end
+
+  opts.on_tail('-v', '--version', 'Show the version') do
+    puts Tellme::VERSION
+    exit
+  end
+end.parse!
+
+case options[:ui]
+when 'gtk'
+  require 'tellme/telstra_gtk'
+when 'text'
+  require 'tellme/telstra_text'
+end

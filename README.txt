@@ -1,32 +1,18 @@
 = tellme
 
-* FIX (url)
-
 == DESCRIPTION:
 
-FIX (describe your package)
-
-== FEATURES/PROBLEMS:
-
-* FIX (list of features or problems)
-
-== SYNOPSIS:
-
-  FIX (code sample of usage)
-
-== REQUIREMENTS:
-
-* FIX (list of requirements)
+Tool to retrieve internet usage for TelstraClear in New Zealand
 
 == INSTALL:
 
-* FIX (sudo gem install, anything else)
+* sudo gem install tellme
 
 == LICENSE:
 
 (The MIT License)
 
-Copyright (c) 2008 FIX
+Copyright (c) 2008 Jeremy Wells
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
