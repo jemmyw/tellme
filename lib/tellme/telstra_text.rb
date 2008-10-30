@@ -1,8 +1,15 @@
 #!/usr/bin/ruby
-require 'telstra'
 
-t = TelstraUsage.new
-t.fetch
+require File.dirname(__FILE__) + '/telstra'
+
+unless $options[:pik] && $options[:password]
+  puts "You must enter your PIK and password to use the text tool."
+  exit
+end
+
+t = TelstraUsage.new($options[:pik], $options[:password])
+t.fetch(30)
+
 output = "#{t.percent}% used"
 output << " in #{t.percent_of_date}% of the period" if t.percent_of_date
 

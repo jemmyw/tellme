@@ -7,21 +7,40 @@ require 'optparse'
 options = {}
 
 OptionParser.new do |opts|
-	opts.banner = "Usage: tellme --gui gtk"
-
-  opts.on("-ui", "--ui", "Select the user interface (GTK, Text)") do |ui|
+	opts.banner = "Usage: tellme --ui gtk \n   Or: tellme --ui text --pik PIK --password PASSWORD"
+  opts.separator " "
+  opts.separator "Options:"
+  
+  opts.on("-u", "--ui UI", "Select the user interface (GTK, Text)") do |ui|
     options[:ui] = ui
   end
 
+  opts.on("--pik PIK", "Your PIK number") do |pik|
+    options[:pik] = pik
+  end
+
+  opts.on("--password PASSWORD", "Your password") do |password|
+    options[:password] = password
+  end
+
+  opts.on("-h", "--help", "Show help") do
+    puts opts
+    exit
+  end
+
   opts.on_tail('-v', '--version', 'Show the version') do
-    puts Tellme::VERSION
+    puts "tellme %s" % Tellme::VERSION
     exit
   end
 end.parse!
+
+$options = options
 
 case options[:ui]
 when 'gtk'
   require 'tellme/telstra_gtk'
 when 'text'
   require 'tellme/telstra_text'
+else
+  
 end
