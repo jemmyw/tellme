@@ -9,6 +9,7 @@ require 'RMagick'
 require 'sparklines'
 require 'libglade2'
 require 'gconf2'
+require 'thread'
 require File.dirname(__FILE__) + '/telstra'
 
 PIE_BACKGROUND = '#800080'
@@ -113,6 +114,8 @@ end
 
 class TelstraApplication
   def initialize
+    @fetch_semaphore = Mutex.new
+    
     setup_gconf
     setup_tray
     setup_menu
@@ -170,12 +173,28 @@ class TelstraApplication
     Gtk.main_quit
   end
 
-  def preferences
-    @preferences ||= PreferencesWindow.new
-  end
-
   def update
     updater.wakeup
+  end
+
+  def fetching
+    @fetch_semaphore.synchronize do
+      @fetching
+    end
+  end
+
+  def fetching=(value)
+    @fetch_semaphore.synchronize do
+      start_animation = value && !@fetching
+      @fetching = value
+      show_fetching if start_animation
+    end
+  end
+  
+  private
+
+  def preferences
+    @preferences ||= PreferencesWindow.new
   end
 
   def updater
@@ -190,15 +209,19 @@ class TelstraApplication
   end
 
   def show_fetching
-    if @fetching
-      @fetch_frame = 0 if @fetch_frame > @fetch_animation.length-1
-      @image = @fetch_animation[@fetch_frame]
-      @fetch_frame+=1
-      update_image
+    @fetch_animation = loading_image
+    @fetch_frame = 0
 
-      true
-    else
-      false
+    Gtk.timeout_add 100 do
+      if self.fetching
+        @fetch_frame = 0 if @fetch_frame > @fetch_animation.length-1
+        self.image = @fetch_animation[@fetch_frame]
+        @fetch_frame+=1
+
+        true
+      else
+        false
+      end
     end
   end
 
@@ -209,58 +232,50 @@ class TelstraApplication
     password = @gconf[GCONF_PASSWORD_KEY]
 
     if pik.blank? || password.blank?
-      @tooltip = "Set your PIK and password first!"
+      self.tooltip = "Set your PIK and password first!"
     else
       begin
-        @fetching = true
-        @fetch_animation = loading_image
-        @fetch_frame = 0
+        self.fetching = true
 
-        Gtk.timeout_add 100 do
-          show_fetching
-        end
-        
         telstra = TelstraUsage.new(pik, password)
         telstra.fetch(30)
         
-        @fetching = false
+        self.fetching = false
 
-        @tooltip = '%d%% used' % telstra.percent
-        @tooltip << (' in %d%% of the period' % telstra.percent_of_date) if telstra.percent_of_date
-        @tooltip << "\n%dGB used, %dGB left" % [telstra.used, telstra.left]
-
-        @image = generate_pie(telstra.percent)
+        self.image = generate_pie(telstra.percent)
+        self.tooltip = "%d%% used in %d%% of the period\n%dGB used, %dGB left" %
+          [telstra.percent, telstra.percent_of_date, telstra.used, telstra.left]
       rescue Exception => e
         puts "Error occured in fetch: #{e}"
+      ensure
+        self.fetching = false
       end
     end
     
     puts "Update complete"
-
-    update_tooltip
-    update_image
   end
 
-  def update_tooltip
+  def tooltip=(value)
     Gtk.queue do
-      @tray.tooltip = @tooltip unless @tooltip.blank?
-    end
+      @tray.tooltip = value
+    end unless value.blank?
   end
 
-  def update_image
-    if @image && @image.respond_to?(:to_blob)
+  def image=(image)
+    if image.respond_to?(:to_blob)
       Gtk.queue do
         loader = Gdk::PixbufLoader.new
         loader.signal_connect('area-prepared') do |l|
           @tray.pixbuf = l.pixbuf
         end
 
-        loader.write(@image.to_blob{|i| i.format = 'GIF'})
+        loader.write(image.to_blob)
         loader.close
       end
     end
   end
 
+  # Generate a pie chart showing a given percentage
   def generate_pie(percent)
     size = @tray.size
 
@@ -274,6 +289,7 @@ class TelstraApplication
     rimage
   end
 
+  # Create a set of frames with a pie chart going up and down
   def loading_image
     percent = 0
     frames = []
