@@ -1,0 +1,9 @@
+#!/usr/bin/ruby
+
+require 'optparse'
+
+options = {}
+
+OptionParser.new do |opts|
+	opts.banner
+

@@ -1,0 +1,12 @@
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+bin/tellme
+lib/tellme.rb
+lib/tellme/telstra.rb
+lib/tellme/telstra_gtk.rb
+lib/tellme/telstra_text.rb
+lib/tellme/telstra.png
+lib/tellme/glade/preferences.glade
+test/test_tellme.rb
