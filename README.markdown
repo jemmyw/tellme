@@ -1,14 +1,19 @@
-= tellme
+## Tellme
+A GTK tray application that shows how much data usage used on TelstraClear New Zealand ISP
 
-== DESCRIPTION:
+### Install
+* gem install tellme
 
-Tool to retrieve internet usage for TelstraClear in New Zealand
 
-== INSTALL:
+### Usage
 
-* sudo gem install tellme
+		$ tellme --ui gtk
 
-== LICENSE:
+Or
+
+    $ tellme --ui text --pik XXXXXXX --password XXXXX
+
+## LICENSE:
 
 (The MIT License)
 
