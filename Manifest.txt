@@ -5,8 +5,10 @@ Rakefile
 bin/tellme
 lib/tellme.rb
 lib/tellme/telstra.rb
-lib/tellme/telstra_gtk.rb
-lib/tellme/telstra_text.rb
-lib/tellme/telstra.png
-lib/tellme/glade/preferences.glade
+lib/tellme/gtk.rb
+lib/tellme/text.rb
+lib/tellme/gtk/gtk.rb
+lib/tellme/gtk/telstra.png
+lib/tellme/gtk/glade/preferences.glade
+lib/tellme/gtk/glade/preferences.rb
 test/test_tellme.rb

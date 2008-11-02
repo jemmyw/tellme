@@ -36,11 +36,4 @@ end.parse!
 
 $options = options
 
-case options[:ui]
-when 'gtk'
-  require 'tellme/telstra_gtk'
-when 'text'
-  require 'tellme/telstra_text'
-else
-  
-end
+Tellme.start(options[:ui])

@@ -1,7 +1,3 @@
-#!/usr/bin/ruby
-
-require File.dirname(__FILE__) + '/telstra'
-
 unless $options[:pik] && $options[:password]
   puts "You must enter your PIK and password to use the text tool."
   exit
