@@ -13,14 +13,23 @@ class TelstraUsage
   attr_reader :end_date
   attr_reader :start_date
 
-  def initialize(pik, password)
+  attr_writer :pik
+  attr_writer :password
+
+  def initialize(pik = nil, password = nil)
     @pik = pik
     @password = password
     
     @agent = WWW::Mechanize.new #{|a| a.log = Logger.new($stderr)}
   end
 
+  def fetched?
+    @fetched
+  end
+
   def fetch(timeout = 30)
+    raise ArgumentError, "Account number and password not set" if @pik.blank? || @password.blank?
+
     @agent.open_timeout = timeout
     @agent.read_timeout = timeout
 
@@ -69,6 +78,8 @@ class TelstraUsage
 
     percent_date = ((((Time.now - @start_date).to_i).to_f / ((@end_date - @start_date).to_i).to_f)*100).round
     @percent_of_date = percent_date
+    
+    @fetched = true
   end
 end
 

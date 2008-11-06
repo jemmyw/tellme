@@ -9,6 +9,7 @@ module Tellme
   class Application
     def initialize
       @fetch_semaphore = Mutex.new
+      @client = TelstraUsage.new
 
       setup_gconf
       setup_tray
@@ -25,8 +26,12 @@ module Tellme
 
     def setup_tray
       @tray = Gtk::StatusIcon.new
-      @tray.file = File.dirname(__FILE__) + '/telstra.png'
       @tray.visible = true
+      @tray.signal_connect('size-changed') do |tray, size|
+        update_from_client
+      end
+      
+      update_from_client
     end
 
     def setup_menu
@@ -131,14 +136,11 @@ module Tellme
         begin
           self.fetching = true
 
-          telstra = TelstraUsage.new(pik, password)
-          telstra.fetch(30)
+          @client.pik = pik
+          @client.password = password
+          @client.fetch(30)
 
           self.fetching = false
-
-          self.image = generate_pie(telstra.percent)
-          self.tooltip = "%d%% used in %d%% of the period\n%dGB used, %dGB left" %
-          [telstra.percent, telstra.percent_of_date, telstra.used, telstra.left]
         rescue Exception => e
           puts "Error occured in fetch: #{e}"
         ensure
@@ -146,15 +148,39 @@ module Tellme
         end
       end
 
+      update_from_client
+
       puts "Update complete"
     end
 
+    # Set the tray image and tooltip using the client information. If the client
+    # has not yet fetched information then call update_from_default to set
+    # the default tray image and tooltip. Thread safe
+    def update_from_client
+      if @client.fetched?
+        self.image = generate_pie(@client.percent)
+        self.tooltip = "%d%% used in %d%% of the period\n%dGB used, %dGB left" %
+          [@client.percent, @client.percent_of_date, @client.used, @client.left]
+      else
+        update_from_default
+      end
+    end
+
+    # Set the default tray image and tooltip. Thread safe
+    def update_from_default
+      self.tooltip = "Waiting for update"
+      self.image = File.dirname(__FILE__) + '/telstra.png'
+    end
+
+    # Set the tray tooltip. Thread safe
     def tooltip=(value)
       Gtk.queue do
         @tray.tooltip = value
       end unless value.blank?
     end
 
+    # Set the tray image. The passed image can either be an RMagick object
+    # or a string holding a path to a file. Thread safe.
     def image=(image)
       if image.respond_to?(:to_blob)
         Gtk.queue do
@@ -165,6 +191,10 @@ module Tellme
 
           loader.write(image.to_blob)
           loader.close
+        end
+      elsif image.respond_to?(:to_s) && File.exists?(image.to_s)
+        Gtk.queue do
+          @tray.file = image.to_s
         end
       end
     end
