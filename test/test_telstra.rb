@@ -4,7 +4,7 @@
 
 require 'test/unit' unless defined? $ZENTEST and $ZENTEST
 require 'mocha'
-require 'lib/tellme/telstra'
+require 'lib/tellme'
 
 class TestTelstraUsage < Test::Unit::TestCase
   def setup

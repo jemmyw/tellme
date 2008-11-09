@@ -32,6 +32,12 @@ module Tellme
       end
       
       update_from_client
+
+      Gtk.timeout_add(500) do
+        screen, rect, orientation = @tray.geometry
+        puts [rect.x, rect.y, rect.width, rect.height].inspect
+        false
+      end
     end
 
     def setup_menu
@@ -160,7 +166,7 @@ module Tellme
       if @client.fetched?
         self.image = generate_pie(@client.percent)
         self.tooltip = "%d%% used in %d%% of the period\n%dGB used, %dGB left" %
-          [@client.percent, @client.percent_of_date, @client.used, @client.left]
+        [@client.percent, @client.percent_of_date, @client.used, @client.left]
       else
         update_from_default
       end

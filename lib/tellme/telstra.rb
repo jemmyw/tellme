@@ -6,6 +6,8 @@ require 'chronic'
 require 'time'
 
 class TelstraUsage
+  USAGE_PAGE = "https://www.telstraclear.co.nz/usagemeter/"
+
   attr_reader :percent
   attr_reader :percent_of_date
   attr_reader :used
@@ -26,31 +28,14 @@ class TelstraUsage
   def fetched?
     @fetched
   end
-
+  
   def fetch(timeout = 30)
     raise ArgumentError, "Account number and password not set" if @pik.blank? || @password.blank?
 
     @agent.open_timeout = timeout
     @agent.read_timeout = timeout
 
-    page = @agent.get("https://www.telstraclear.co.nz/usagemeter/")
-    form = page.forms[1]
-    form.fields.find{|f| f.name == 'acc' }.value = @pik
-    form.fields.find{|f| f.name == 'pik' }.value = @password
-    page = @agent.submit(form, form.buttons.first)
-
-    doc = Hpricot(page.body)
-
-    if page.body =~ /main menu for account/i
-      link = (doc/"a").detect do |a|
-        a.inner_text =~ /\d+\s+-\s+today/i
-      end
-      
-      link = link.attributes['href']
-      
-      page = @agent.get(link)
-      doc = Hpricot(page.body)
-    end
+    doc = fetch_usage_page
 
     text_elements = (doc/"#usg_content_info").first
     text = text_elements.inner_text
@@ -80,6 +65,31 @@ class TelstraUsage
     @percent_of_date = percent_date
     
     @fetched = true
+  end
+
+  private
+
+  def fetch_usage_page
+    page = @agent.get(USAGE_PAGE)
+    form = page.forms[1]
+    form.fields.find{|f| f.name == 'acc' }.value = @pik
+    form.fields.find{|f| f.name == 'pik' }.value = @password
+    page = @agent.submit(form, form.buttons.first)
+
+    doc = Hpricot(page.body)
+
+    if page.body =~ /main menu for account/i
+      link = (doc/"a").detect do |a|
+        a.inner_text =~ /\d+\s+-\s+today/i
+      end
+
+      link = link.attributes['href']
+
+      page = @agent.get(link)
+      doc = Hpricot(page.body)
+    end
+
+    doc
   end
 end
 
